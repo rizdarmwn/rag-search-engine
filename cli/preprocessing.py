@@ -16,7 +16,7 @@ def preprocess_text(s: str) -> list[str]:
 
 
 def tokenization(s: str) -> list[str]:
-    tokens = list(filter(lambda x: x != "", s.split(" ")))
+    tokens = list(filter(lambda x: x != "", s.split()))
     return tokens
 
 

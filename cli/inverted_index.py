@@ -1,3 +1,4 @@
+import math
 import os
 import pickle
 from collections import Counter, defaultdict
@@ -41,17 +42,40 @@ class InvertedIndex:
 
         return self.term_frequencies[doc_id][token[0]]
 
+    def get_idf(self, term: str) -> float:
+        tokens = preprocess_text(term)
+        if len(tokens) != 1:
+            raise ValueError("term must be a single token")
+        token = tokens[0]
+        doc_count = len(self.docmap)
+        term_doc_count = len(self.index[token])
+        return math.log((doc_count + 1) / (term_doc_count + 1))
+
+    def get_tfidf(self, doc_id: int, term: str) -> float:
+        tokens = preprocess_text(term)
+        tfidfs = []
+        for token in tokens:
+            tf = self.get_tf(doc_id, token)
+            idf = self.get_idf(token)
+            tfidfs.append(tf * idf)
+
+        return sum(tfidfs)
+
+    def get_bm25_idf(self, term: str) -> float:
+        tokens = preprocess_text(term)
+        if len(tokens) != 1:
+            raise ValueError("term must be a single token")
+        token = tokens[0]
+        doc_count = len(self.docmap)
+        term_doc_count = len(self.index[token])
+        return math.log((doc_count - term_doc_count + 0.5) / (term_doc_count + 0.5) + 1)
+
     def build(self):
         movies = load_movies()
         for movie in movies:
-            input_text = ""
-            if "title" in movie:
-                input_text = f"{input_text} {movie['title']}"
-            if "description" in movie:
-                input_text = f"{input_text} {movie['description']}"
-            input_text = input_text.strip()
-            self.__add_document(movie["id"], input_text)
+            input_text = f"{movie['title']} {movie['description']}"
             self.docmap[movie["id"]] = movie
+            self.__add_document(movie["id"], input_text)
 
     def save(self):
         if not os.path.exists(CACHE_PATH):

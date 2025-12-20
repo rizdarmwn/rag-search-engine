@@ -1,3 +1,4 @@
+import math
 from typing import Any
 
 from inverted_index import InvertedIndex
@@ -33,3 +34,24 @@ def tf_command(doc_id: int, term: str) -> int:
     inverted_idx = InvertedIndex()
     inverted_idx.load()
     return inverted_idx.get_tf(doc_id, term)
+
+
+def idf_command(term: str) -> float:
+    inverted_idx = InvertedIndex()
+    inverted_idx.load()
+    idf = inverted_idx.get_idf(term)
+    return idf
+
+
+def tfidf_command(doc_id: int, term: str) -> float:
+    inverted_idx = InvertedIndex()
+    inverted_idx.load()
+    tfidf = inverted_idx.get_tfidf(doc_id, term)
+    return tfidf
+
+
+def bm25_idf_command(term: str) -> float:
+    inverted_idx = InvertedIndex()
+    inverted_idx.load()
+    bm25_idf = inverted_idx.get_bm25_idf(term)
+    return bm25_idf

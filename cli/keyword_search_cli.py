@@ -2,7 +2,14 @@
 
 import argparse
 
-from commands import build_command, search_command, tf_command
+from commands import (
+    bm25_idf_command,
+    build_command,
+    idf_command,
+    search_command,
+    tf_command,
+    tfidf_command,
+)
 from inverted_index import InvertedIndex
 
 
@@ -15,12 +22,35 @@ def main() -> None:
     build_parser = subparsers.add_parser("build", help="Build the movies data")
     tf_parser = subparsers.add_parser("tf", help="Get the term frequency of a string")
     tf_parser.add_argument(
-        "document_id", type=int, help="Document ID to search for term frequency"
+        "doc_id", type=int, help="Document ID to search for term frequency"
     )
     tf_parser.add_argument(
         "term", type=str, help="The term to get the term frequency of"
     )
 
+    idf_parser = subparsers.add_parser(
+        "idf", help="Calculate a term inverse document frequency"
+    )
+    idf_parser.add_argument(
+        "term",
+        type=str,
+        help="The term to calculate it's IDF",
+    )
+
+    tfidf_parser = subparsers.add_parser(
+        "tfidf", help="Get the term TF-IDF from a document"
+    )
+    tfidf_parser.add_argument(
+        "doc_id", type=int, help="Document ID to search for the TF-IDF"
+    )
+    tfidf_parser.add_argument("term", type=str, help="The term to get the TF-IDF of")
+
+    bm25_idf_parser = subparsers.add_parser(
+        "bm25idf", help="Get BM25 IDF score for a given term"
+    )
+    bm25_idf_parser.add_argument(
+        "term", type=str, help="Term to get BM25 IDF score for"
+    )
     args = parser.parse_args()
 
     match args.command:
@@ -32,16 +62,25 @@ def main() -> None:
                     print(f"{i}. {m['id']} {m['title']}")
             except Exception as e:
                 print({e})
-
         case "build":
             build_command()
         case "tf":
             try:
-                tf = tf_command(args.document_id, args.term)
-                print(f"Term frequency of {args.term} on {args.document_id}: {tf}")
+                tf = tf_command(args.doc_id, args.term)
+                print(f"Term frequency of {args.term} on {args.doc_id}: {tf}")
             except Exception as e:
                 print({e})
-
+        case "idf":
+            idf = idf_command(args.term)
+            print(f"Inverse document frequency of '{args.term}': {idf:.2f}")
+        case "tfidf":
+            tf_idf = tfidf_command(args.doc_id, args.term)
+            print(
+                f"TF-IDF score of '{args.term}' in document '{args.doc_id}': {tf_idf:.2f}"
+            )
+        case "bm25idf":
+            bm25_idf = bm25_idf_command(args.term)
+            print(f"BM25 IDF score of '{args.term}': {bm25_idf:.2f}")
         case _:
             parser.print_help()
 
