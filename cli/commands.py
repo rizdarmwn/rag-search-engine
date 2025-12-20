@@ -1,6 +1,7 @@
 import math
 from typing import Any
 
+from constants import BM25_B, BM25_K1
 from inverted_index import InvertedIndex
 from preprocessing import preprocess_text
 from search_utils import DEFAULT_SEARCH_LIMIT
@@ -55,3 +56,12 @@ def bm25_idf_command(term: str) -> float:
     inverted_idx.load()
     bm25_idf = inverted_idx.get_bm25_idf(term)
     return bm25_idf
+
+
+def bm25_tf_command(
+    doc_id: int, term: str, k1: float = BM25_K1, b: float = BM25_B
+) -> float:
+    inverted_idx = InvertedIndex()
+    inverted_idx.load()
+    bm25_tf = inverted_idx.get_bm25_tf(doc_id, term, k1)
+    return bm25_tf

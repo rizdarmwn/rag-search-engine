@@ -4,6 +4,7 @@ import pickle
 from collections import Counter, defaultdict
 from typing import Any
 
+from constants import BM25_B, BM25_K1
 from preprocessing import preprocess_text
 from search_utils import PROJECT_ROOT, load_movies
 
@@ -11,6 +12,7 @@ CACHE_PATH = os.path.join(PROJECT_ROOT, "cache")
 INDEX_CACHE_PATH = os.path.join(CACHE_PATH, "index.pkl")
 DOCMAP_CACHE_PATH = os.path.join(CACHE_PATH, "docmap.pkl")
 TFREQ_CACHE_PATH = os.path.join(CACHE_PATH, "term_frequencies.pkl")
+DOC_LENGTHS_CACHE_PATH = os.path.join(CACHE_PATH, "doc_lengths.pkl")
 
 
 class InvertedIndex:
@@ -18,17 +20,29 @@ class InvertedIndex:
         self.index: dict[str, set[int]] = defaultdict(set)
         self.docmap: dict[int, dict[Any, Any]] = {}
         self.term_frequencies: dict[int, Counter] = {}
+        self.doc_lengths: dict[int, int] = {}
 
     def __add_document(self, doc_id: int, text: str):
         if doc_id not in self.term_frequencies:
             self.term_frequencies[doc_id] = Counter()
         tokens = preprocess_text(text)
+        self.doc_lengths[doc_id] = len(tokens)
         for token in set(tokens):
             if token in self.index:
                 self.index[token].add(doc_id)
             else:
                 self.index[token] = set((doc_id,))
         self.term_frequencies[doc_id].update(tokens)
+
+    def __get_avg_doc_length(self) -> float:
+        if len(self.doc_lengths) == 0:
+            return 0.0
+
+        total_doc_length = 0
+        for doc_id in self.doc_lengths:
+            total_doc_length += self.doc_lengths[doc_id]
+
+        return total_doc_length / len(self.doc_lengths)
 
     def get_documents(self, term: str) -> list[int]:
         token = term.lower()
@@ -70,6 +84,13 @@ class InvertedIndex:
         term_doc_count = len(self.index[token])
         return math.log((doc_count - term_doc_count + 0.5) / (term_doc_count + 0.5) + 1)
 
+    def get_bm25_tf(self, doc_id: int, term: str, k1=BM25_K1, b=BM25_B) -> float:
+        tf = self.get_tf(doc_id, term)
+        doc_length = self.doc_lengths[doc_id]
+        avg_doc_length = self.__get_avg_doc_length()
+        length_norm = 1 - b + (b * (doc_length / avg_doc_length))
+        return (tf * (k1 + 1)) / (tf + k1 * length_norm)
+
     def build(self):
         movies = load_movies()
         for movie in movies:
@@ -86,26 +107,33 @@ class InvertedIndex:
             pickle.dump(self.docmap, docmap_cache)
         with open(TFREQ_CACHE_PATH, "wb") as tfreq_cache:
             pickle.dump(self.term_frequencies, tfreq_cache)
+        with open(DOC_LENGTHS_CACHE_PATH, "wb") as doc_len_cache:
+            pickle.dump(self.doc_lengths, doc_len_cache)
 
         idx_cache.close()
         docmap_cache.close()
         tfreq_cache.close()
+        doc_len_cache.close()
 
     def load(self):
-        if not os.path.exists(INDEX_CACHE_PATH) or not os.path.exists(
-            DOCMAP_CACHE_PATH
+        if (
+            not os.path.exists(INDEX_CACHE_PATH)
+            or not os.path.exists(DOCMAP_CACHE_PATH)
+            or not os.path.exists(TFREQ_CACHE_PATH)
+            or not os.path.exists(DOC_LENGTHS_CACHE_PATH)
         ):
             raise FileNotFoundError("File not found on cache")
 
         with open(INDEX_CACHE_PATH, "rb") as idx_cache:
             self.index = pickle.load(idx_cache)
-
         with open(DOCMAP_CACHE_PATH, "rb") as docmap_cache:
             self.docmap = pickle.load(docmap_cache)
-
         with open(TFREQ_CACHE_PATH, "rb") as tfreq_cache:
             self.term_frequencies = pickle.load(tfreq_cache)
+        with open(DOC_LENGTHS_CACHE_PATH, "rb") as doc_len_cache:
+            self.doc_lengths = pickle.load(doc_len_cache)
 
         idx_cache.close()
         docmap_cache.close()
         tfreq_cache.close()
+        doc_len_cache.close()
