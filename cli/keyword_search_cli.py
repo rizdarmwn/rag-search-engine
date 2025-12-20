@@ -2,8 +2,8 @@
 
 import argparse
 
+from commands import build_command, search_command, tf_command
 from inverted_index import InvertedIndex
-from matching import build_command, search_command, tf_command
 
 
 def main() -> None:

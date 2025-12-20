@@ -2,7 +2,7 @@ from typing import Any
 
 from inverted_index import InvertedIndex
 from preprocessing import preprocess_text
-from search_utils import DEFAULT_SEARCH_LIMIT, load_movies
+from search_utils import DEFAULT_SEARCH_LIMIT
 
 
 def build_command():
