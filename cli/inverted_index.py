@@ -1,3 +1,4 @@
+import heapq
 import math
 import os
 import pickle
@@ -6,7 +7,7 @@ from typing import Any
 
 from constants import BM25_B, BM25_K1
 from preprocessing import preprocess_text
-from search_utils import PROJECT_ROOT, load_movies
+from search_utils import DEFAULT_SEARCH_LIMIT, PROJECT_ROOT, load_movies
 
 CACHE_PATH = os.path.join(PROJECT_ROOT, "cache")
 INDEX_CACHE_PATH = os.path.join(CACHE_PATH, "index.pkl")
@@ -90,6 +91,24 @@ class InvertedIndex:
         avg_doc_length = self.__get_avg_doc_length()
         length_norm = 1 - b + (b * (doc_length / avg_doc_length))
         return (tf * (k1 + 1)) / (tf + k1 * length_norm)
+
+    def bm25(self, doc_id: int, term: str):
+        tf = self.get_bm25_tf(doc_id, term)
+        idf = self.get_bm25_idf(term)
+        return tf * idf
+
+    def bm25_search(self, query: str, limit: int = DEFAULT_SEARCH_LIMIT):
+        tokens = preprocess_text(query)
+        scores = {}
+        for doc_id in self.docmap:
+            for token in tokens:
+                bm25 = self.bm25(doc_id, token)
+                if doc_id in scores:
+                    scores[doc_id] += bm25
+                else:
+                    scores[doc_id] = bm25
+
+        return dict(heapq.nlargest(limit, scores.items(), key=lambda x: x[1]))
 
     def build(self):
         movies = load_movies()

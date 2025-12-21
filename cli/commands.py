@@ -65,3 +65,12 @@ def bm25_tf_command(
     inverted_idx.load()
     bm25_tf = inverted_idx.get_bm25_tf(doc_id, term, k1)
     return bm25_tf
+
+
+def bm25_search_command(query: str):
+    inverted_idx = InvertedIndex()
+    inverted_idx.load()
+    bm25 = inverted_idx.bm25_search(query)
+    for i, doc_id in enumerate(bm25):
+        title = inverted_idx.docmap[doc_id]["title"]
+        print(f"{i + 1}. ({doc_id}) {title} - Score: {bm25[doc_id]:.2f}")
