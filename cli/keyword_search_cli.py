@@ -13,7 +13,7 @@ from commands import (
     tfidf_command,
 )
 from constants import BM25_B, BM25_K1
-from inverted_index import InvertedIndex
+from lib.inverted_index import InvertedIndex
 
 
 def main() -> None:

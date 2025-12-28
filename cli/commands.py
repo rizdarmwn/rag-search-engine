@@ -1,10 +1,9 @@
 import math
 from typing import Any
 
-from constants import BM25_B, BM25_K1
-from inverted_index import InvertedIndex
+from constants import BM25_B, BM25_K1, DEFAULT_SEARCH_LIMIT
+from lib.inverted_index import InvertedIndex
 from preprocessing import preprocess_text
-from search_utils import DEFAULT_SEARCH_LIMIT
 
 
 def build_command():

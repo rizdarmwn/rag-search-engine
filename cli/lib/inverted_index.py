@@ -5,15 +5,18 @@ import pickle
 from collections import Counter, defaultdict
 from typing import Any
 
-from constants import BM25_B, BM25_K1
+from constants import (
+    BM25_B,
+    BM25_K1,
+    CACHE_PATH,
+    DEFAULT_SEARCH_LIMIT,
+    DOC_LENGTHS_CACHE_PATH,
+    DOCMAP_CACHE_PATH,
+    INDEX_CACHE_PATH,
+    TFREQ_CACHE_PATH,
+)
 from preprocessing import preprocess_text
-from search_utils import DEFAULT_SEARCH_LIMIT, PROJECT_ROOT, load_movies
-
-CACHE_PATH = os.path.join(PROJECT_ROOT, "cache")
-INDEX_CACHE_PATH = os.path.join(CACHE_PATH, "index.pkl")
-DOCMAP_CACHE_PATH = os.path.join(CACHE_PATH, "docmap.pkl")
-TFREQ_CACHE_PATH = os.path.join(CACHE_PATH, "term_frequencies.pkl")
-DOC_LENGTHS_CACHE_PATH = os.path.join(CACHE_PATH, "doc_lengths.pkl")
+from search_utils import load_movies
 
 
 class InvertedIndex:
