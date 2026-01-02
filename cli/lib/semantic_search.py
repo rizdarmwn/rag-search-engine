@@ -6,8 +6,9 @@ from typing import Any
 
 import numpy as np
 from constants import MOVIE_EMBEDDINGS_CACHE_PATH, CHUNK_EMBEDDINGS_CACHE_PATH, CHUNK_METADATA_CACHE_PATH
-from search_utils import load_movies
+from search_utils import load_movies, format_search_result
 from sentence_transformers import SentenceTransformer
+from custom_types import SearchResult
 
 
 class SemanticSearch:
@@ -51,7 +52,7 @@ class SemanticSearch:
 
         return self.build_embeddings(documents)
 
-    def search(self, query: str, limit):
+    def search(self, query: str, limit) -> list[SearchResult]:
         if self.embeddings is None:
             raise ValueError("No embeddings loaded. Call `load_or_create_embeddings` first")
         embedding = self.generate_embedding(query)
@@ -61,7 +62,7 @@ class SemanticSearch:
 
         sorted_scores = heapq.nlargest(limit, sim_scores, lambda x: x[0])
 
-        return list(map(lambda x: {"score": x[0], "title": x[1]["title"], "description": x[1]["description"]}, sorted_scores))
+        return list(map(lambda x: format_search_result(x[1]["id"], x[1]["title"], x[1]["description"], x[0]), sorted_scores))
 
 class ChunkedSemanticSearch(SemanticSearch):
     def __init__(self, model_name: str = "all-MiniLM-L6-v2") -> None:
@@ -114,7 +115,7 @@ class ChunkedSemanticSearch(SemanticSearch):
 
         return self.chunk_embeddings if self.chunk_embeddings is not None else self.build_chunk_embeddings(documents)
 
-    def search_chunks(self, query: str, limit: int = 10):
+    def search_chunks(self, query: str, limit: int = 10) -> list[SearchResult]:
         embedding = self.generate_embedding(query)
         chunk_scores = []
         for i, chunk_embed in enumerate(self.chunk_embeddings):
@@ -132,7 +133,7 @@ class ChunkedSemanticSearch(SemanticSearch):
 
         sorted_scores = heapq.nlargest(limit, movie_scores.items(), key=lambda x: x[1])
 
-        return list(map(lambda x: {"id": x[0], "title": self.documents[x[0]]["title"], "document": self.documents[x[0]]["description"][:100], "score": x[1], "metadata": {}}, sorted_scores))
+        return list(map(lambda x: format_search_result(self.documents[x[0]]["id"], self.documents[x[0]]["title"], self.documents[x[0]]["description"], x[1]), sorted_scores))
 
 
 def search_chunked_command(query: str, limit: int=5):

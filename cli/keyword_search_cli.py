@@ -2,7 +2,7 @@
 
 import argparse
 
-from commands import (
+from lib.inverted_index import (
     bm25_idf_command,
     bm25_search_command,
     bm25_tf_command,
@@ -11,9 +11,9 @@ from commands import (
     search_command,
     tf_command,
     tfidf_command,
+    InvertedIndex
 )
 from constants import BM25_B, BM25_K1
-from lib.inverted_index import InvertedIndex
 
 
 def main() -> None:

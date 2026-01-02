@@ -4,6 +4,7 @@ import os
 import pickle
 from collections import Counter, defaultdict
 from typing import Any
+from custom_types import SearchResult
 
 from constants import (
     BM25_B,
@@ -16,7 +17,7 @@ from constants import (
     TFREQ_CACHE_PATH,
 )
 from preprocessing import preprocess_text
-from search_utils import load_movies
+from search_utils import load_movies, format_search_result
 
 
 class InvertedIndex:
@@ -100,7 +101,7 @@ class InvertedIndex:
         idf = self.get_bm25_idf(term)
         return tf * idf
 
-    def bm25_search(self, query: str, limit: int = DEFAULT_SEARCH_LIMIT):
+    def bm25_search(self, query: str, limit: int = DEFAULT_SEARCH_LIMIT) -> list[SearchResult]:
         tokens = preprocess_text(query)
         scores = {}
         for doc_id in self.docmap:
@@ -111,7 +112,21 @@ class InvertedIndex:
                 else:
                     scores[doc_id] = bm25
 
-        return dict(heapq.nlargest(limit, scores.items(), key=lambda x: x[1]))
+        sorted_scores = dict(heapq.nlargest(limit, scores.items(), key=lambda x: x[1]))
+
+        results: list[SearchResult] = []
+        for doc_id in sorted_scores:
+            doc = self.docmap[doc_id]
+            score = sorted_scores[doc_id]
+            formatted_result = format_search_result(
+                doc_id=doc['id'],
+                title=doc['title'],
+                document=doc['description'],
+                score=score
+            )
+            results.append(formatted_result)
+
+        return results
 
     def build(self):
         movies = load_movies()
@@ -159,3 +174,71 @@ class InvertedIndex:
         docmap_cache.close()
         tfreq_cache.close()
         doc_len_cache.close()
+
+def build_command():
+    idx = InvertedIndex()
+    idx.build()
+    idx.save()
+
+
+def search_command(q: str, limit: int = DEFAULT_SEARCH_LIMIT) -> list[dict[Any, Any]]:
+    inverted_idx = InvertedIndex()
+    inverted_idx.load()
+    seen, res = set(), []
+    query_tokens = preprocess_text(q)
+    for token in query_tokens:
+        doc_ids = inverted_idx.get_documents(token)
+        for doc_id in doc_ids:
+            if doc_id in seen:
+                continue
+            seen.add(doc_id)
+            doc = inverted_idx.docmap[doc_id]
+            res.append(doc)
+            if len(res) >= limit:
+                return res
+    return res
+
+
+def tf_command(doc_id: int, term: str) -> int:
+    inverted_idx = InvertedIndex()
+    inverted_idx.load()
+    return inverted_idx.get_tf(doc_id, term)
+
+
+def idf_command(term: str) -> float:
+    inverted_idx = InvertedIndex()
+    inverted_idx.load()
+    idf = inverted_idx.get_idf(term)
+    return idf
+
+
+def tfidf_command(doc_id: int, term: str) -> float:
+    inverted_idx = InvertedIndex()
+    inverted_idx.load()
+    tfidf = inverted_idx.get_tfidf(doc_id, term)
+    return tfidf
+
+
+def bm25_idf_command(term: str) -> float:
+    inverted_idx = InvertedIndex()
+    inverted_idx.load()
+    bm25_idf = inverted_idx.get_bm25_idf(term)
+    return bm25_idf
+
+
+def bm25_tf_command(
+    doc_id: int, term: str, k1: float = BM25_K1, b: float = BM25_B
+) -> float:
+    inverted_idx = InvertedIndex()
+    inverted_idx.load()
+    bm25_tf = inverted_idx.get_bm25_tf(doc_id, term, k1)
+    return bm25_tf
+
+
+def bm25_search_command(query: str):
+    inverted_idx = InvertedIndex()
+    inverted_idx.load()
+    bm25 = inverted_idx.bm25_search(query)
+    for i, res in enumerate(bm25):
+        title = res["title"]
+        print(f"{i + 1}. ({res["id"]}) {title} - Score: {res["score"]:.2f}")
