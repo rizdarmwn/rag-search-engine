@@ -9,6 +9,7 @@ from constants import INDEX_CACHE_PATH, SEARCH_MULTIPLIER
 from search_enhancement import enhance_query
 from reranking import rerank
 from search_utils import load_movies, format_search_result
+from custom_types import RRFSearchResult, SearchResult
 
 
 class HybridSearch:
@@ -26,7 +27,7 @@ class HybridSearch:
         self.idx.load()
         return self.idx.bm25_search(query, limit)
 
-    def weighted_search(self, query, alpha, limit=5):
+    def weighted_search(self, query, alpha, limit=5) -> list[SearchResult]:
         kw_search = self._bm25_search(query, limit * 500)
         sm_search = self.semantic_search.search_chunks(query, limit * 500)
 
@@ -76,7 +77,7 @@ class HybridSearch:
         return list(map(lambda x: format_search_result(x[0], x[1]["title"], x[1]["document"], x[1]["hybrid_score"], kw_score=x[1]["kw_score"], sm_score=x[1]["sm_score"], hybrid_score=x[1]["hybrid_score"]), sorted_scores))
 
 
-    def rrf_search(self, query, k, limit=10):
+    def rrf_search(self, query, k, limit=10) -> list[SearchResult]:
         kw_search = self._bm25_search(query, limit * 500)
         sm_search = self.semantic_search.search_chunks(query, limit * 500)
 
@@ -116,7 +117,7 @@ class HybridSearch:
 
         sorted_scores = heapq.nlargest(limit, document_map.items(), key=lambda x: x[1]["rrf_score"])
 
-        results = list(map(lambda x: format_search_result(x[0], x[1]["title"], x[1]["document"], x[1]["rrf_score"], rrf_score=x[1]["rrf_score"], kw_rank=x[1]["kw_rank"], sm_rank=x[1]["sm_rank"]), sorted_scores))
+        results: list[SearchResult] = list(map(lambda x: format_search_result(x[0], x[1]["title"], x[1]["document"], x[1]["rrf_score"], rrf_score=x[1]["rrf_score"], kw_rank=x[1]["kw_rank"], sm_rank=x[1]["sm_rank"]), sorted_scores))
 
         return results
 
@@ -142,7 +143,7 @@ def weighted_search_command(query, alpha: float=0.5, limit: int=5):
 def rrf_score(rank, k=60):
     return 1 / (k + rank)
 
-def rrf_search_command(query:str, enhance: Optional[str] = None, rerank_method: Optional[str] = None, k:int = 60, limit:int=5):
+def rrf_search_command(query:str, enhance: Optional[str] = None, rerank_method: Optional[str] = None, k:int = 60, limit:int=5) -> RRFSearchResult:
     documents = load_movies()
     hs = HybridSearch(documents)
 
@@ -160,7 +161,7 @@ def rrf_search_command(query:str, enhance: Optional[str] = None, rerank_method: 
         results = rerank(query, results, method=rerank_method, limit=limit)
         reranked = True
 
-    return {
+    res: RRFSearchResult = {
         "original_query": org_query,
         "enhanced_query": enhanced_query,
         "enhance_method": enhance,
@@ -170,3 +171,5 @@ def rrf_search_command(query:str, enhance: Optional[str] = None, rerank_method: 
         "reranked": reranked,
         "results": results,
     }
+
+    return res

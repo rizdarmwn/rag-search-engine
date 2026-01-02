@@ -9,13 +9,14 @@ from google import genai
 from constants import DEFAULT_SEARCH_LIMIT
 
 from sentence_transformers import CrossEncoder
+from custom_types import SearchResult
 
 load_dotenv()
 api_key = os.getenv("GEMINI_API_KEY")
 client = genai.Client(api_key=api_key)
 model = "gemini-2.0-flash"
 
-def individual_rerank(query: str, docs: list[dict], limit: int = DEFAULT_SEARCH_LIMIT) -> list[dict]:
+def individual_rerank(query: str, docs: list[SearchResult], limit: int = DEFAULT_SEARCH_LIMIT) -> list[dict]:
     scored_docs = []
     for doc in docs:
         individual_reranker = f"""Rate how well this movie matches the search query.
@@ -40,7 +41,7 @@ def individual_rerank(query: str, docs: list[dict], limit: int = DEFAULT_SEARCH_
 
     return heapq.nlargest(limit, scored_docs, key=lambda x: x["individual_score"])
 
-def batch_rerank(query: str, docs: list[dict[str, Any]], limit: int = DEFAULT_SEARCH_LIMIT) -> list[dict]:
+def batch_rerank(query: str, docs: list[SearchResult], limit: int = DEFAULT_SEARCH_LIMIT) -> list[dict]:
     if not docs:
         return []
 
@@ -79,7 +80,7 @@ def batch_rerank(query: str, docs: list[dict[str, Any]], limit: int = DEFAULT_SE
 
     return reranked[:limit]
 
-def cross_encoder_rerank(query: str, docs: list[dict], limit: int=5) -> list[dict]:
+def cross_encoder_rerank(query: str, docs: list[SearchResult], limit: int=5) -> list[dict]:
     pairs = []
     doc_list = []
     for doc in docs:
@@ -91,7 +92,7 @@ def cross_encoder_rerank(query: str, docs: list[dict], limit: int=5) -> list[dic
     return heapq.nlargest(limit, doc_list, key=lambda x: x["cross_encoder_score"])
 
 def rerank(
-    query: str, documents: list[dict], method: str = "batch", limit: int = 5
+    query: str, documents: list[SearchResult], method: str = "batch", limit: int = 5
 ) -> list[dict]:
     if method == "individual":
         return individual_rerank(query, documents, limit)
