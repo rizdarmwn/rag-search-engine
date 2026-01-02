@@ -3,7 +3,7 @@ import json
 
 from constants import GOLDEN_DATASET_PATH
 from lib.hybrid_search import rrf_search_command
-from lib.evaluation import precision_command
+from lib.evaluation import evaluation_command
 
 def main():
     parser = argparse.ArgumentParser(description="Search Evaluation CLI")
@@ -18,14 +18,18 @@ def main():
     limit = args.limit
     print(f"k={limit}")
 
-    result = precision_command(limit)
+    result = evaluation_command(limit)
 
     for q, res in result["results"].items():
         precision = res["precision"]
+        recall = res["recall"]
+        f1_score = res["f1_score"]
         retrieved_docs = res["retrieved"]
         relevant_docs = res["relevant"]
         print(f"- Query: {q}")
         print(f"\t- Precision@{limit}: {precision:.4f}")
+        print(f"\t- Recall@{limit}: {recall:.4f}")
+        print(f"\t- F1 Score: {f1_score:.4f}")
         print(f"\t- Retrieved: {", ".join(retrieved_docs)}")
         print(f"\t- Relevant: {", ".join(relevant_docs)}")
         print()

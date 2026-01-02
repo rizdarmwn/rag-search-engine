@@ -11,7 +11,6 @@ from reranking import rerank
 from search_utils import load_movies, format_search_result
 from custom_types import RRFSearchResult, SearchResult
 
-
 class HybridSearch:
     def __init__(self, documents):
         self.documents = documents
@@ -149,17 +148,26 @@ def rrf_search_command(query:str, enhance: Optional[str] = None, rerank_method: 
 
     org_query = query
     enhanced_query = None
+    print(f"DEBUG: Original query: {org_query}")
     if enhance:
         enhanced_query = enhance_query(query, method=enhance)
         query = enhanced_query
+        print(f"DEBUG: Enhance method: {enhance}")
+        print(f"DEBUG: Enhanced query: {enhanced_query}")
 
     search_limit = limit * SEARCH_MULTIPLIER if rerank_method else limit
     results = hs.rrf_search(query, k, search_limit)
+    print("DEBUG: Results of RRF Search:")
+    for result in results:
+        print(f"\t- {result["title"]}")
 
     reranked = False
     if rerank_method:
         results = rerank(query, results, method=rerank_method, limit=limit)
         reranked = True
+        print(f"DEBUG: Reranking final results:")
+        for result in results:
+            print(f"\t- {result['title']}")
 
     res: RRFSearchResult = {
         "original_query": org_query,

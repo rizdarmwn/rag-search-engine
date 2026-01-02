@@ -8,6 +8,7 @@ from lib.hybrid_search import normalize_command, weighted_search_command, rrf_se
 from google import genai
 from search_enhancement import enhance_query
 from reranking import rerank
+from lib.evaluation import llm_judge_evaluate
 
 def main() -> None:
 
@@ -59,6 +60,12 @@ def main() -> None:
         required=False,
         choices=["individual", "batch", "cross_encoder"]
     )
+    rrf_search_parser.add_argument(
+        "--evaluate",
+        help="Evaluate the search results",
+        required=False,
+        action="store_true"
+    )
 
 
     args = parser.parse_args()
@@ -105,6 +112,12 @@ def main() -> None:
                     print(f"   {', '.join(ranks)}")
                 print(f"   {res['document'][:100]}...")
                 print()
+
+            if args.evaluate:
+                scores = llm_judge_evaluate(result["query"], result["results"])
+                for i, score in enumerate(scores, 1):
+                    print(f"{i}. {score["title"]}: {score["score"]}/3")
+
         case _:
             parser.print_help()
 
