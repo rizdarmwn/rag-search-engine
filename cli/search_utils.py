@@ -3,12 +3,18 @@ import os
 from typing import Any, TypedDict
 from custom_types import SearchResult
 
-from constants import DATA_PATH, STOPWORDS_PATH, SCORE_PRECISION
+from constants import DATA_PATH, STOPWORDS_PATH, SCORE_PRECISION, GOLDEN_DATASET_PATH
 
+def load_golden_dataset() -> dict:
+    with open(GOLDEN_DATASET_PATH, "r") as f:
+        json_data = json.load(f)
+    f.close()
+    return json_data
 
 def load_movies() -> list[dict]:
     with open(DATA_PATH, "r") as f:
         data = json.load(f)
+    f.close()
     return data["movies"]
 
 

@@ -3,6 +3,7 @@ import json
 
 from constants import GOLDEN_DATASET_PATH
 from lib.hybrid_search import rrf_search_command
+from lib.evaluation import precision_command
 
 def main():
     parser = argparse.ArgumentParser(description="Search Evaluation CLI")
@@ -15,28 +16,17 @@ def main():
 
     args = parser.parse_args()
     limit = args.limit
-
     print(f"k={limit}")
 
-    with open(GOLDEN_DATASET_PATH, "r") as data:
-        json_data = json.load(data)
+    result = precision_command(limit)
 
-    for tc in json_data["test_cases"]:
-        query = tc["query"]
-        results = rrf_search_command(query, k=60, limit=limit)
-        total_retrieved = len(results["results"])
-        relevant_retrieved = 0
-        relevant_docs = tc["relevant_docs"]
-        total_titles = list(map(lambda x: x["title"], results["results"]))
-        for r_title in relevant_docs:
-            for title in total_titles:
-                if title == r_title:
-                    relevant_retrieved += 1
-                    break
-        precision = min(1.0, relevant_retrieved / total_retrieved)
-        print(f"- Query: {results["query"]}")
+    for q, res in result["results"].items():
+        precision = res["precision"]
+        retrieved_docs = res["retrieved"]
+        relevant_docs = res["relevant"]
+        print(f"- Query: {q}")
         print(f"\t- Precision@{limit}: {precision:.4f}")
-        print(f"\t- Retrieved: {", ".join(total_titles)}")
+        print(f"\t- Retrieved: {", ".join(retrieved_docs)}")
         print(f"\t- Relevant: {", ".join(relevant_docs)}")
         print()
 
