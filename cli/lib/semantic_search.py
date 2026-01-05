@@ -9,6 +9,7 @@ from constants import MOVIE_EMBEDDINGS_CACHE_PATH, CHUNK_EMBEDDINGS_CACHE_PATH, 
 from search_utils import load_movies, format_search_result
 from sentence_transformers import SentenceTransformer
 from custom_types import SearchResult
+from vector_utils import cosine_similarity
 
 
 class SemanticSearch:
@@ -230,14 +231,3 @@ def semantic_chunk_command(text: str, max_chunk_size: int=4, overlap: int = 0):
         chunks.append(" ".join(chunk_sentence))
         i += max_chunk_size - overlap
     return chunks
-
-
-def cosine_similarity(vec1, vec2):
-    dot_product = np.dot(vec1, vec2)
-    norm1 = np.linalg.norm(vec2)
-    norm2 = np.linalg.norm(vec2)
-
-    if norm1 == 0 or norm2 == 0:
-        return 0.0
-
-    return dot_product / (norm1 * norm2)
