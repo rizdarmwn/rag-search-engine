@@ -48,6 +48,11 @@ A sophisticated movie search and recommendation system leveraging Retrieval-Augm
     ```/dev/null/.env
     GOOGLE_API_KEY=your_gemini_api_key_here
     ```
+    
+4.  **Download the Dataset**:
+    Download the dataset here: [movies.json](https://storage.googleapis.com/qvault-webapp-dynamic-assets/course_assets/course-rag-movies.json)
+    
+    Make a `data` directory on the project root, and put `movies.json` there.
 
 ## 📖 Usage Examples
 
